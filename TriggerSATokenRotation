@@ -1,0 +1,42 @@
+{
+    "mode": "Indexed",
+    "parameters": {
+        "credentialAgeInDays": {
+            "type": "Integer",
+            "metadata": {
+                "description": "The maximum age of credentials in days before rotation is required"
+            },
+            "defaultValue": 90
+        }
+    },
+    "policyRule": {
+        "if": {
+            "allOf": [
+                {
+                    "field": "type",
+                    "equals": "Microsoft.ManagedIdentity/userAssignedIdentities"
+                },
+                {
+                    "not": {
+                        "field": "Microsoft.ManagedIdentity/userAssignedIdentities/credentials[0].endDate",
+                        "greater": "[addDays(utcNow(), parameters('credentialAgeInDays'))]"
+                    }
+                }
+            ]
+        },
+        "then": {
+            "effect": "modify",
+            "details": {
+                "type": "Microsoft.ManagedIdentity/userAssignedIdentities/credentials",
+                "name": "[concat(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', field('Microsoft.ManagedIdentity/userAssignedIdentities/id')), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/credentials/default')]",
+                "existenceCondition": {
+                    "field": "Microsoft.ManagedIdentity/userAssignedIdentities/credentials[0].endDate",
+                    "greater": "[addDays(utcNow(), parameters('credentialAgeInDays'))]"
+                },
+                "properties": {
+                    "durationInMinutes": 60
+                }
+            }
+        }
+    }
+}
